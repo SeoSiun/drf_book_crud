@@ -49,8 +49,14 @@ class BookViewSet(viewsets.ModelViewSet):
         ],
     )
     def list(self, request, *args, **kwargs):
-        """query parameter에 따라 title, author로 검색하거나, title, author, price를 기준으로 정렬된 책 목록을 가져옴."""
+        """query parameter에 따라 title, author로 검색하거나, title, author, price를 기준으로 정렬된 책 목록을 한 페이지(3개)씩 가져옴."""
         queryset = self.get_queryset()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
