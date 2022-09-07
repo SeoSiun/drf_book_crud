@@ -1,12 +1,19 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 from rest_framework.response import Response
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 from .models import Book
 from .serializers import BookSerializer
 
+
+def is_valid_ordering(ordering):
+    if ordering == 'title' or ordering == '-title' \
+            or ordering == 'author' or ordering == '-author' \
+            or ordering == 'price' or ordering == '-price':
+        return True
+    return False
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
@@ -17,10 +24,15 @@ class BookViewSet(viewsets.ModelViewSet):
 
         search_title = self.request.query_params.get('title', )
         search_author = self.request.query_params.get('author', )
+        ordering = self.request.query_params.get('ordering',)
+
         if search_title:
             qs = qs.filter(title__contains=search_title)
         if search_author:
             qs = qs.filter(author__contains=search_author)
+        if is_valid_ordering(ordering):
+            return qs.order_by(ordering)
+
         return qs
 
     @swagger_auto_schema(
