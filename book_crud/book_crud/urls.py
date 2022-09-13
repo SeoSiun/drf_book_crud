@@ -16,9 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.conf import settings
-from rest_framework import permissions
+from rest_framework import permissions, urls
+from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from user.views import UserViewSet
 
 
 SchemaView = get_schema_view(
@@ -32,11 +34,16 @@ SchemaView = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
+router = DefaultRouter()
+router.register(r'users', UserViewSet)
+
 urlpatterns = [
     re_path(r'^swagger(?P<format>.json|.yaml)$', SchemaView.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', SchemaView.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', SchemaView.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
+    path('', include(router.urls)),
     path('admin/', admin.site.urls),
     path("api/", include(("api.urls", "api"))),
+    path('api-auth/', include('rest_framework.urls')),
 ]

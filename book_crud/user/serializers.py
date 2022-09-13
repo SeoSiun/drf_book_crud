@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models.user import User
+from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
