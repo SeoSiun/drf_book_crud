@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -18,6 +19,7 @@ def is_valid_ordering(ordering):
     return False
 
 class BookViewSet(viewsets.ModelViewSet):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
@@ -66,9 +68,12 @@ class BookViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(operation_summary='책 생성')
+    @swagger_auto_schema(operation_summary='책 생성', manual_parameters=[
+        openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                          description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태.')
+    ])
     def create(self, request, *args, **kwargs):
-        """title, author, introduction, price 정보를 갖는 책 생성."""
+        """title, author, introduction, price 정보를 갖는 책 생성 / 로그인한 유저만 생성 가능"""
         return super(BookViewSet, self).create(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='책 detail 정보')
@@ -76,17 +81,26 @@ class BookViewSet(viewsets.ModelViewSet):
         """id에 해당하는 책의 정보를 가져옴."""
         return super(BookViewSet, self).retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='책 정보 전체 수정')
+    @swagger_auto_schema(operation_summary='책 정보 전체 수정', manual_parameters=[
+        openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                          description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태.')
+    ])
     def update(self, request, *args, **kwargs):
-        """id에 해당하는 책의 title, author, introduction, price를 request로 받은 값으로 수정"""
+        """id에 해당하는 책의 title, author, introduction, price를 request로 받은 값으로 수정 / 해당 책을 생성한 유저만 가능"""
         return super(BookViewSet, self).update(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='책 정보 수정')
+    @swagger_auto_schema(operation_summary='책 정보 수정', manual_parameters=[
+        openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                          description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태.')
+    ])
     def partial_update(self, request, *args, **kwargs):
-        """id에 해당하는 책의 title, author, introduction, price 중 request body에서 받은 값을 수정"""
+        """id에 해당하는 책의 title, author, introduction, price 중 request body에서 받은 값을 수정 / 해당 책을 생성한 유저만 가능"""
         return super(BookViewSet, self).partial_update(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='책 삭제')
+    @swagger_auto_schema(operation_summary='책 삭제', manual_parameters=[
+        openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                          description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태.')
+    ])
     def destroy(self, request, *args, **kwargs):
-        """id에 해당하는 책을 삭제"""
+        """id에 해당하는 책을 삭제 / 해당 책을 생성한 유저만 가능"""
         return super(BookViewSet, self).destroy(request, *args, **kwargs)
