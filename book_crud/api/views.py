@@ -1,11 +1,13 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from .models import Book
 from .serializers import BookSerializer
+from .permissions import IsOwnerOrReadOnly
 
 
 def is_valid_ordering(ordering):
@@ -16,6 +18,7 @@ def is_valid_ordering(ordering):
     return False
 
 class BookViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
@@ -34,6 +37,9 @@ class BookViewSet(viewsets.ModelViewSet):
             return qs.order_by(ordering)
 
         return qs
+
+    def perform_create(self, serializer):
+        serializer.save(user = self.request.user)
 
     @swagger_auto_schema(
         operation_summary='책 목록',
