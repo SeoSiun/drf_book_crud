@@ -1,13 +1,15 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins, exceptions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.status import HTTP_200_OK
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from .models import Book
-from .serializers import BookSerializer
+from .models import Book, Order
+from user.models import User
+from .serializers import BookSerializer, OrderSerializer
 from .permissions import IsOwnerOrReadOnly
 
 
@@ -109,3 +111,45 @@ class BookViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """id에 해당하는 책을 삭제 / 해당 책을 생성한 유저만 가능"""
         return super(BookViewSet, self).destroy(request, *args, **kwargs)
+
+
+class OrderViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+    def perform_create(self, serializer):
+        user = User()
+        user.id = self.request.user.id
+        book = Book()
+        book.id = self.request.data['bookId']
+        serializer.save(user=user, book=book)
+
+
+    @swagger_auto_schema(
+        operation_summary='order생성 (주문하기)',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'bookId': openapi.Schema(type=openapi.TYPE_INTEGER),
+            },
+            required=['bookId'],
+        ),
+        manual_parameters=[
+            openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                              description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태.')
+        ],
+        responses={
+            HTTP_200_OK: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'book': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'user': openapi.Schema(type=openapi.TYPE_INTEGER),
+                }
+            )
+        }
+    )
+    def create(self, request, *args, **kwargs):
+        '''token에 해당하는 유저와 bookId에 해당하는 책을 갖는 order 생성.'''
+        return super(OrderViewSet, self).create(request, *args, **kwargs)
