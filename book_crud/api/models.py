@@ -9,3 +9,11 @@ class Book(models.Model):
     price = models.IntegerField()
     user = models.ForeignKey(User, null=True, default=None, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.title
+
+
+class Order(models.Model):
+    user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, null=False, on_delete=models.CASCADE, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
