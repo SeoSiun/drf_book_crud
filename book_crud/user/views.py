@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from .models import User, Token
+from .models import User
 from .serializers import UserSerializer
 
 class UserViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):

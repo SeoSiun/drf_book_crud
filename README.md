@@ -20,6 +20,8 @@ Django REST Framework(DRF), Swagger를 이용해 상품(Book)에 대한 CRUD(Cre
 | PUT | books/{id} | id에 해당하는 책의 title, author, introduction, price를 request로 받은 값으로 수정 |
 | PATCH | books/{id} | id에 해당하는 책의 title, author, introduction, price 중 request body에서 받은 값을 수정 |
 | DELETE | books/{id} | id에 해당하는 책을 삭제 |
+ | POST | users/ | email, password, name, address 정보를 갖는 유저 생성 (email 중복 불가) / 해당 유저의 token을 반환함.|
+ | POST | users/login/ | email, password와 일치하는 유저의 token을 반환 |
 
 ### How To Run
 
