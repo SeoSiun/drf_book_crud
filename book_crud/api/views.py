@@ -30,11 +30,14 @@ class BookViewSet(viewsets.ModelViewSet):
         search_title = self.request.query_params.get('title', )
         search_author = self.request.query_params.get('author', )
         ordering = self.request.query_params.get('ordering',)
+        user = self.request.user
 
         if search_title:
             qs = qs.filter(title__contains=search_title)
         if search_author:
             qs = qs.filter(author__contains=search_author)
+        if user.is_active:
+            qs = qs.filter(user__email=user)
         if is_valid_ordering(ordering):
             return qs.order_by(ordering)
 
@@ -46,10 +49,12 @@ class BookViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         operation_summary='책 목록',
         manual_parameters=[
+            openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                              description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태, token이 주어지면 해당 유저가 생성한 책 목록을 가져옴.'),
             openapi.Parameter('title', openapi.IN_QUERY, type=openapi.TYPE_STRING,
-                              description='값이 주어진다면 title에 이 값을 포함하는 책 목록을 가져옵니다.(검색어)'),
+                              description='값이 주어진다면 title에 이 값을 포함하는 책 목록을 가져옴.(검색어)'),
             openapi.Parameter('author', openapi.IN_QUERY, type=openapi.TYPE_STRING,
-                              description='값이 주어진다면 author에 이 값을 포함하는 책 목록을 가져옵니다.(검색어)'),
+                              description='값이 주어진다면 author에 이 값을 포함하는 책 목록을 가져옴.(검색어)'),
             openapi.Parameter('ordering', openapi.IN_QUERY, type=openapi.TYPE_STRING,
                               description='이 값(field 이름)을 기준으로 오름차순으로 정렬 (field 명 앞에 "-"를 붙이면 내림차순) '
                                           + '/ 정렬 기준이 될 수 있는 field는 title, author, price '
@@ -57,7 +62,7 @@ class BookViewSet(viewsets.ModelViewSet):
         ],
     )
     def list(self, request, *args, **kwargs):
-        """query parameter에 따라 title, author로 검색하거나, title, author, price를 기준으로 정렬된 책 목록을 한 페이지(3개)씩 가져옴."""
+        """query parameter에 따라 title, author로 검색하거나, title, author, price를 기준으로 정렬된 책 목록을 한 페이지(3개)씩 가져옴. / header로 토큰이 주어지면 해당 유저가 생성한 책 목록을 반환함."""
         queryset = self.get_queryset()
 
         page = self.paginate_queryset(queryset)
