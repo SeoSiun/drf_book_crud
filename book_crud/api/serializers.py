@@ -16,3 +16,13 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['user', 'book', 'created_at']
+
+class GetOrderSerializer(serializers.ModelSerializer):
+    user_id = serializers.ReadOnlyField(source='user.id')
+    user_email = serializers.ReadOnlyField(source='user.email')
+    user_address = serializers.ReadOnlyField(source='user.address')
+    book_id = serializers.ReadOnlyField(source='book.id')
+    book_title = serializers.ReadOnlyField(source='book.title')
+    class Meta:
+        model = Order
+        fields = ['user_id', 'user_email', 'user_address', 'book_id', 'book_title', 'created_at']

@@ -3,13 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from .models import Book, Order
 from user.models import User
-from .serializers import BookSerializer, OrderSerializer
+from .serializers import BookSerializer, OrderSerializer, GetOrderSerializer
 from .permissions import IsOwnerOrReadOnly
 
 
@@ -113,11 +113,62 @@ class BookViewSet(viewsets.ModelViewSet):
         return super(BookViewSet, self).destroy(request, *args, **kwargs)
 
 
-class OrderViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
+class OrderViewSet(viewsets.GenericViewSet,
+                   mixins.CreateModelMixin,
+                   mixins.ListModelMixin):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_active:
+            qs = qs.filter(user__email=user)
+
+        return qs
+
+    @swagger_auto_schema(
+        operation_summary='주문 내역',
+        manual_parameters=[
+            openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
+                              description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태, 해당 유저의 주문 목록을 가져옴.'),
+        ],
+        responses={
+            HTTP_200_OK: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'next': openapi.Schema(type=openapi.FORMAT_URI),
+                    'previous': openapi.Schema(type=openapi.FORMAT_URI),
+                    'results': openapi.Schema(type=openapi.TYPE_OBJECT,
+                                              properties={
+                                                  'user_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                                  'user_email': openapi.Schema(type=openapi.TYPE_STRING),
+                                                  'user_address': openapi.Schema(type=openapi.TYPE_STRING),
+                                                  'book_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                                  'book_title': openapi.Schema(type=openapi.TYPE_STRING),
+                                                  'created_at': openapi.Schema(type=openapi.FORMAT_DATETIME)
+                                              }),
+                }
+            )
+        }
+    )
+    def list(self, request, *args, **kwargs):
+        """token에 해당하는 유저의 주문 목록을 한 페이지(3개)씩 가져옴."""
+        queryset = self.get_queryset()
+        self.serializer_class = GetOrderSerializer
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
     def perform_create(self, serializer):
         [user] = User.objects.all().filter(id=self.request.user.id)
@@ -142,11 +193,12 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
                               description='로그인/회원가입 결과 얻은 token, "Token {Token}" 형태.')
         ],
         responses={
-            HTTP_200_OK: openapi.Schema(
+            HTTP_201_CREATED: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'user': openapi.Schema(type=openapi.TYPE_INTEGER),
                     'book': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'created_at': openapi.Schema(type=openapi.FORMAT_DATETIME)
                 }
             )
         }
