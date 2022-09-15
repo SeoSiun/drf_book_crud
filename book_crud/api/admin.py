@@ -12,5 +12,5 @@ class BookAdmin(admin.ModelAdmin):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     pass
-    list_display = ['user', 'book', 'created_at']
+    list_display = ['id', 'user', 'book', 'created_at']
     list_per_page = 10

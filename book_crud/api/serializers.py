@@ -15,7 +15,7 @@ class OrderSerializer(serializers.ModelSerializer):
     book = serializers.ReadOnlyField(source='book.id')
     class Meta:
         model = Order
-        fields = ['user', 'book', 'created_at']
+        fields = ['id', 'user', 'book', 'created_at']
 
 class GetOrderSerializer(serializers.ModelSerializer):
     user_id = serializers.ReadOnlyField(source='user.id')
@@ -25,4 +25,4 @@ class GetOrderSerializer(serializers.ModelSerializer):
     book_title = serializers.ReadOnlyField(source='book.title')
     class Meta:
         model = Order
-        fields = ['user_id', 'user_email', 'user_address', 'book_id', 'book_title', 'created_at']
+        fields = ['id', 'user_id', 'user_email', 'user_address', 'book_id', 'book_title', 'created_at']

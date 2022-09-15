@@ -65,15 +65,7 @@ class BookViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         """query parameter에 따라 title, author로 검색하거나, title, author, price를 기준으로 정렬된 책 목록을 한 페이지(3개)씩 가져옴. / header로 토큰이 주어지면 해당 유저가 생성한 책 목록을 반환함."""
-        queryset = self.get_queryset()
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return super(BookViewSet, self).list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='책 생성', manual_parameters=[
         openapi.Parameter('Authorization', openapi.IN_HEADER, type=openapi.TYPE_STRING,
@@ -115,9 +107,10 @@ class BookViewSet(viewsets.ModelViewSet):
 
 class OrderViewSet(viewsets.GenericViewSet,
                    mixins.CreateModelMixin,
-                   mixins.ListModelMixin):
+                   mixins.ListModelMixin,
+                   mixins.DestroyModelMixin,):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
@@ -158,16 +151,8 @@ class OrderViewSet(viewsets.GenericViewSet,
     )
     def list(self, request, *args, **kwargs):
         """token에 해당하는 유저의 주문 목록을 한 페이지(3개)씩 가져옴."""
-        queryset = self.get_queryset()
         self.serializer_class = GetOrderSerializer
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return super(OrderViewSet, self).list(request, *args, **kwargs)
 
 
     def perform_create(self, serializer):
@@ -206,3 +191,14 @@ class OrderViewSet(viewsets.GenericViewSet,
     def create(self, request, *args, **kwargs):
         '''token에 해당하는 유저와 bookId에 해당하는 책을 갖는 order 생성.'''
         return super(OrderViewSet, self).create(request, *args, **kwargs)
+
+
+    def perform_destroy(self, instance):
+        instance.book.is_on_sale = True
+        instance.book.save()
+        instance.delete()
+
+    @swagger_auto_schema(operation_summary='order 삭제 (주문취소)')
+    def destroy(self, request, *args, **kwargs):
+        '''orderId에 해당하는 order 삭제'''
+        return super(OrderViewSet, self).destroy(request, *args, **kwargs)

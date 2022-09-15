@@ -16,5 +16,5 @@ class Book(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
-    book = models.ForeignKey(Book, null=False, on_delete=models.CASCADE, unique=True)
+    book = models.OneToOneField(Book, null=False, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
