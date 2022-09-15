@@ -120,10 +120,11 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
     serializer_class = OrderSerializer
 
     def perform_create(self, serializer):
-        user = User()
-        user.id = self.request.user.id
-        book = Book()
-        book.id = self.request.data['bookId']
+        [user] = User.objects.all().filter(id=self.request.user.id)
+        [book] = Book.objects.all().filter(id=self.request.data['bookId'])
+
+        book.is_on_sale=False
+        book.save()
         serializer.save(user=user, book=book)
 
 
@@ -144,8 +145,8 @@ class OrderViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             HTTP_200_OK: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'book': openapi.Schema(type=openapi.TYPE_INTEGER),
                     'user': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'book': openapi.Schema(type=openapi.TYPE_INTEGER),
                 }
             )
         }

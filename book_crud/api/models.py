@@ -8,6 +8,7 @@ class Book(models.Model):
     introduction = models.CharField(max_length=500)
     price = models.IntegerField()
     user = models.ForeignKey(User, null=True, default=None, on_delete=models.CASCADE)
+    is_on_sale = models.BooleanField(default=True)
 
     def __str__(self):
         return self.title

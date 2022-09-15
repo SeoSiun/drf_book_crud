@@ -15,4 +15,4 @@ class OrderSerializer(serializers.ModelSerializer):
     book = serializers.ReadOnlyField(source='book.id')
     class Meta:
         model = Order
-        fields = ['user', 'book']
+        fields = ['user', 'book', 'created_at']
